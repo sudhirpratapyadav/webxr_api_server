@@ -1,103 +1,58 @@
-# WebXR Teleop
+# WebXR API Server
 
-A real-time application that uses FastAPI and WebSockets to transmit 6 DOF (degrees of freedom) pose data from a WebXR-enabled browser to a Python server.
+A simple server that captures WebXR data from mobile devices and makes it available through an API.
 
-## Features
+## Quick Setup
 
-- FastAPI backend with WebSocket support
-- WebXR client for VR pose tracking
-- Real-time data transmission using WebSockets
-- Simple web interface for connection management
-- Pose data visualization
-
-## Requirements
-
-- Python 3.7+
-- WebXR-compatible browser (Chrome, Edge, Firefox with VR headset)
-- VR headset (for WebXR functionality)
-- Mobile device with WebXR support for mobile usage
-
-## Installation
-
-1. Clone this repository
-2. Install the required packages:
-
-```bash
-pip install -r requirements.txt
-```
-
-## Usage
-
-1. Run the server:
-
-```bash
-./run_server.sh
-```
-
-Or manually with:
-
-```bash
-uvicorn server:app --host 0.0.0.0 --port 8000 --reload
-```
-
-2. Find your computer's local IP address on your WiFi network:
+1. Install required packages:
    ```bash
-   ip addr show | grep "inet " | grep -v 127.0.0.1
+   pip install -r requirements.txt
    ```
-   This will show your local IP address (e.g., 192.168.1.100)
 
-3. On your PC or mobile device, open a browser and navigate to:
-   ```
-   http://<your-local-ip>:8000/static/index.html
-   ```
-   (Replace <your-local-ip> with the IP address from step 2)
-
-### HTTPS Support (Required for WebXR)
-
-**Important:** WebXR requires HTTPS except on localhost. If you're having issues with WebXR on mobile, you should use the HTTPS server:
-
-1. Set up HTTPS with our provided script:
+2. Set up HTTPS (required for WebXR):
    ```bash
    ./setup_https.sh
    ```
 
-2. Run the HTTPS server:
+3. Run the server:
    ```bash
    python run_https_server.py
    ```
 
-3. Access your application at:
-   ```
-   https://<your-local-ip>:8443/static/index.html
-   ```
+## Access URLs
 
-4. You will see a security warning about the self-signed certificate. Click "Advanced" and then "Proceed" to continue.
+Once the server is running, you can access:
 
-### Test WebXR Support
+- Main interface: `https://<your-ip>:8443/static/index.html`
+- WebXR test page: `https://<your-ip>:8443/static/webxr_test.html`
 
-To check if your mobile device properly supports WebXR:
+The server will display your IP address when it starts. For example:
+```
+Starting HTTPS server on 192.168.31.22:8443
+Access URLs:
+- Local PC: https://192.168.31.22:8443/static/index.html
+- Mobile:   https://192.168.31.22:8443/static/index.html
+- WebXR Test: https://192.168.31.22:8443/static/webxr_test.html
+```
 
-1. Access the test page:
-   ```
-   https://<your-local-ip>:8443/static/webxr_test.html
-   ```
+## Important Notes
 
-2. This minimal test page will show you if WebXR AR/VR is supported on your device.
+- You will see security warnings about the self-signed certificate in your browser
+- Click "Advanced" and then "Proceed" to continue
+- For mobile devices, you need to first open the URL in your browser and accept the security warning
+- Both your computer and mobile device must be on the same network
 
-## Mobile Usage
+## Testing WebXR Support
 
-For using the application on a mobile device:
+To check if your device supports WebXR:
+1. Visit https://immersive-web.github.io/webxr-samples/ 
+2. Or use the included test page at `https://<your-ip>:8443/static/webxr_test.html`
 
-1. Ensure your mobile device supports WebXR (recent Android devices with Chrome or Samsung Internet)
-2. Both your computer (server) and mobile device must be on the same WiFi network
-3. Use your computer's local IP address to access the application (e.g., https://192.168.1.100:8443/static/index.html)
-4. For AR support on mobile, the application will use the device's position and orientation sensors
+## Requirements
 
-## API Endpoints
-
-- `GET /` - Basic server status
-- `GET /latest_pose` - Retrieve the latest pose data received from any client
-- `WebSocket /ws` - WebSocket endpoint for real-time pose data transmission
+- Python 3.7+
+- Mobile device with WebXR support
+- Both server and client on the same network
 
 ## Data Format
 
@@ -120,8 +75,19 @@ The pose data is transmitted as JSON with the following structure:
 }
 ```
 
-## Notes on WebXR
+## Repository Structure
 
-- WebXR requires HTTPS in production environments
-- For local development, browsers may allow WebXR over HTTP on localhost
-- Some browsers require enabling WebXR features in settings
+```
+.
+├── README.md               # This documentation file
+├── requirements.txt        # Python dependencies
+├── run_https_server.py     # Script to start HTTPS server
+├── server.py               # Main FastAPI server implementation
+├── setup_https.sh          # Script to generate self-signed certificates
+├── certs/                  # Directory for SSL certificates
+│   ├── cert.pem            # Self-signed certificate
+│   └── key.pem             # Private key for the certificate
+└── static/                 # Static web files
+    ├── index.html          # Main web interface
+    └── teleop_client.js    # WebXR client JavaScript code
+```
