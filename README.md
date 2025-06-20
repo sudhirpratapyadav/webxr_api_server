@@ -2,24 +2,42 @@
 
 A simple server that captures WebXR data from mobile devices and makes it available through an API.
 
+## Requirements
+
+- Python 3.7+
+- Mobile device with WebXR support ()
+- Both server and client on the same network
+
+## Testing WebXR Support
+
+To check if your device supports WebXR:
+1. Visit https://immersive-web.github.io/webxr-samples/ 
+2. Or use the included test page at `https://<your-ip>:8443/static/webxr_test.html` (after running the server)
+
 ## Quick Setup
 
-1. Install required packages:
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/sudhirpratapyadav/webxr_api_server.git
+   cd webxr_api_server
+   ```
+
+2. Install required packages:
    ```bash
    pip install -r requirements.txt
    ```
 
-2. Set up HTTPS (required for WebXR):
+3. Set up HTTPS (required for WebXR):
    ```bash
    ./setup_https.sh
    ```
 
-3. Run the server:
+4. Run the server:
    ```bash
    python run_https_server.py
    ```
 
-## Access URLs
+### Accessing the web app
 
 Once the server is running, you can access:
 
@@ -41,18 +59,6 @@ Access URLs:
 - Click "Advanced" and then "Proceed" to continue
 - For mobile devices, you need to first open the URL in your browser and accept the security warning
 - Both your computer and mobile device must be on the same network
-
-## Testing WebXR Support
-
-To check if your device supports WebXR:
-1. Visit https://immersive-web.github.io/webxr-samples/ 
-2. Or use the included test page at `https://<your-ip>:8443/static/webxr_test.html`
-
-## Requirements
-
-- Python 3.7+
-- Mobile device with WebXR support
-- Both server and client on the same network
 
 ## Data Format
 
