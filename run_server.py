@@ -35,11 +35,11 @@ def main():
     print("="*50)
     print(f"Starting HTTPS server on {local_ip}:{args.port}")
     print(f"Access URLs:")
-    print(f"- Local PC: https://{local_ip}:{args.port}/static/index.html")
-    print(f"- Mobile:   https://{local_ip}:{args.port}/static/index.html")
+    print(f"- Main App: https://{local_ip}:{args.port}/static/index.html")
     print(f"- WebXR Test: https://{local_ip}:{args.port}/static/webxr_test.html")
     print("="*50)
     print("NOTE: You will see security warnings about the self-signed certificate.")
+    print("Press Ctrl+C once to gracefully shut down the server.")
     print("You need to accept these warnings to proceed.")
     print("="*50)
     

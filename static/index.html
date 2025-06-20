@@ -8,7 +8,7 @@
     <meta name="theme-color" content="#4285f4">
     <!-- iOS Safari -->
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>WebXR Teleop</title>
+    <title>WebXR Client</title>
     <style>
         body {
             margin: 0;
@@ -64,35 +64,21 @@
             background-color: #ccc;
             cursor: not-allowed;
         }
-        .pose-data {
-            background-color: white;
-            padding: 15px;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            height: 300px;
-            overflow-y: auto;
-            font-family: monospace;
-        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>WebXR Teleop</h1>
+        <h1>WebXR Client</h1>
         
         <div class="status-bar">
             <div id="connection-indicator" class="status-indicator"></div>
             <span id="connection-status">WebSocket: Disconnected</span>
-            <span id="xr-status" style="margin-left: 20px;">WebXR: Not Started</span>
         </div>
         
         <div class="controls">
             <button id="connect-btn">Connect to Server</button>
-            <button id="start-xr-btn" disabled>Start WebXR Session</button>
-            <button id="stop-xr-btn" disabled>Stop WebXR Session</button>
+            <button id="start-xr-btn" disabled>Start AR Session</button>
         </div>
-        
-        <h2>Pose Data:</h2>
-        <pre id="pose-display" class="pose-data">No data yet</pre>
     </div>
 
     <script src="/static/teleop_client.js"></script>

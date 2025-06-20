@@ -1,11 +1,11 @@
 # WebXR API Server
 
-A simple server that captures WebXR data from mobile devices and makes it available through an API.
+A streamlined server that captures pose data (position and orientation) from mobile AR sessions (using WebXR api) and makes it available to server (PC) through WebSocket.
 
 ## Requirements
 
 - Python 3.7+
-- Mobile device with WebXR support ()
+- Mobile device with WebXR API support (most modern Android/iOS devices)
 - Both server and client on the same network
 
 ## Testing WebXR Support
@@ -34,7 +34,12 @@ To check if your device supports WebXR:
 
 4. Run the server:
    ```bash
-   python run_https_server.py
+   python run_server.py
+   ```
+
+5. To stop the server gracefully:
+   ```bash
+   # Press Ctrl+C once and wait for "All clients disconnected" message
    ```
 
 ### Accessing the web app
@@ -48,8 +53,7 @@ The server will display your IP address when it starts. For example:
 ```
 Starting HTTPS server on 192.168.31.22:8443
 Access URLs:
-- Local PC: https://192.168.31.22:8443/static/index.html
-- Mobile:   https://192.168.31.22:8443/static/index.html
+- Main App: https://192.168.31.22:8443/static/index.html
 - WebXR Test: https://192.168.31.22:8443/static/webxr_test.html
 ```
 
@@ -60,9 +64,17 @@ Access URLs:
 - For mobile devices, you need to first open the URL in your browser and accept the security warning
 - Both your computer and mobile device must be on the same network
 
+## Usage
+
+1. Open the web app on your mobile device
+2. Click "Connect to Server" to establish a WebSocket connection
+3. Once connected, the "Start AR Session" button will become active
+4. Click "Start AR Session" to begin capturing AR pose data
+5. An "Exit" button will appear in the AR view to end the session
+
 ## Data Format
 
-The pose data is transmitted as JSON with the following structure:
+The pose data is transmitted as JSON with the following structure, containing position and orientation (quaternion):
 
 ```json
 {
@@ -81,13 +93,26 @@ The pose data is transmitted as JSON with the following structure:
 }
 ```
 
+## API endpoints
+
+The server provides two APIs
+
+1. **REST API**: Get the latest pose data by sending a GET request to `https://<your-ip>:8443/latest_pose`
+
+2. **Server Info**: Check server status with `https://<your-ip>:8443/server-info`
+
+## Architecture and Flow Diagrams
+
+For detailed architecture, sequence, data flow, and error handling diagrams, see [diagrams.md](diagrams.md).
+
 ## Repository Structure
 
 ```
 .
 ├── README.md               # This documentation file
+├── diagrams.md             # Architecture and flow diagrams
 ├── requirements.txt        # Python dependencies
-├── run_https_server.py     # Script to start HTTPS server
+├── run_server.py     # Script to start HTTPS server
 ├── server.py               # Main FastAPI server implementation
 ├── setup_https.sh          # Script to generate self-signed certificates
 ├── certs/                  # Directory for SSL certificates
@@ -95,5 +120,6 @@ The pose data is transmitted as JSON with the following structure:
 │   └── key.pem             # Private key for the certificate
 └── static/                 # Static web files
     ├── index.html          # Main web interface
-    └── teleop_client.js    # WebXR client JavaScript code
+    ├── teleop_client.js    # WebXR client JavaScript code
+    └── webxr_test.html     # WebXR compatibility test page
 ```

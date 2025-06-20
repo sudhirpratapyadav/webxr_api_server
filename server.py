@@ -15,6 +15,12 @@ app = FastAPI()
 # Serve static files (HTML, JS, CSS)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Handle graceful shutdown"""
+    logger.info("Server is shutting down...")
+    await manager.disconnect_all()
+
 # Store for connected clients
 class ConnectionManager:
     def __init__(self):
@@ -35,14 +41,34 @@ class ConnectionManager:
             logger.info(f"Client disconnected. Total clients: {self.connection_count}")
 
     async def broadcast(self, message: Dict):
+        disconnected = []
         for connection in self.active_connections:
-            await connection.send_json(message)
+            try:
+                await connection.send_json(message)
+            except RuntimeError:
+                # Connection might be closed
+                disconnected.append(connection)
+        
+        # Clean up any failed connections
+        for conn in disconnected:
+            self.disconnect(conn)
     
     def update_pose(self, pose_data: Dict):
         self.latest_pose = pose_data
 
     def get_latest_pose(self) -> Dict:
         return self.latest_pose
+        
+    async def disconnect_all(self):
+        """Disconnect all active connections gracefully"""
+        logger.info(f"Disconnecting all {len(self.active_connections)} clients")
+        for connection in self.active_connections[:]:  # Create copy to safely iterate
+            try:
+                await connection.close()
+            except Exception:
+                pass
+            self.disconnect(connection)
+        logger.info("All clients disconnected")
 
 
 manager = ConnectionManager()
@@ -91,10 +117,6 @@ async def websocket_endpoint(websocket: WebSocket):
             data = await websocket.receive_text()
             pose_data = json.loads(data)
             
-            # Check if it's from a mobile device
-            is_mobile = pose_data.get("isMobile", False)
-            device_type = "Mobile" if is_mobile else "VR/Desktop"
-            
             # Update the latest pose
             manager.update_pose(pose_data)
             
@@ -102,19 +124,22 @@ async def websocket_endpoint(websocket: WebSocket):
             if "position" in pose_data and "orientation" in pose_data:
                 pos = pose_data["position"]
                 ori = pose_data["orientation"]
-                logger.info(f"Received {device_type} pose:")
+                logger.info(f"Received AR pose:")
                 logger.info(f"  Position: x={pos['x']}, y={pos['y']}, z={pos['z']}")
                 logger.info(f"  Quaternion: x={ori['x']}, y={ori['y']}, z={ori['z']}, w={ori['w']}")
             elif "position" in pose_data:
                 pos = pose_data["position"]
-                logger.info(f"Received {device_type} pose: x={pos['x']}, y={pos['y']}, z={pos['z']}")
+                logger.info(f"Received AR pose: x={pos['x']}, y={pos['y']}, z={pos['z']}")
             
-            # Broadcast to all clients (optional, for multi-client scenarios)
-            await manager.broadcast(pose_data)
+            # Broadcast removed - only store the latest pose for REST API access
             
     except WebSocketDisconnect:
         manager.disconnect(websocket)
-        print("Client disconnected")
+        logger.info(f"Client {client_ip} disconnected")
+    except Exception as e:
+        logger.error(f"Error with client {client_ip}: {str(e)}")
+        manager.disconnect(websocket)
+        logger.info(f"Client {client_ip} disconnected due to error")
 
 
 # Optional REST endpoint to get the latest pose
