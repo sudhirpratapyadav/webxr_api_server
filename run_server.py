@@ -37,6 +37,7 @@ def main():
     print(f"Access URLs:")
     print(f"- Main App: https://{local_ip}:{args.port}/static/index.html")
     print(f"- WebXR Test: https://{local_ip}:{args.port}/static/webxr_test.html")
+    print(f"- Pose Monitor: https://{local_ip}:{args.port}/static/gui.html")
     print("="*50)
     print("NOTE: You will see security warnings about the self-signed certificate.")
     print("Press Ctrl+C once to gracefully shut down the server.")

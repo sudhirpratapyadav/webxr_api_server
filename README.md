@@ -47,6 +47,7 @@ To check if your device supports WebXR:
 Once the server is running, you can access:
 
 - Main interface: `https://<your-ip>:8443/static/index.html`
+- Visualization GUI: `https://<your-ip>:8443/static/gui.html`
 - WebXR test page: `https://<your-ip>:8443/static/webxr_test.html`
 
 The server will display your IP address when it starts. For example:
@@ -54,6 +55,7 @@ The server will display your IP address when it starts. For example:
 Starting HTTPS server on 192.168.31.22:8443
 Access URLs:
 - Main App: https://192.168.31.22:8443/static/index.html
+- Visualization: https://192.168.31.22:8443/static/gui.html
 - WebXR Test: https://192.168.31.22:8443/static/webxr_test.html
 ```
 
@@ -71,6 +73,16 @@ Access URLs:
 3. Once connected, the "Start AR Session" button will become active
 4. Click "Start AR Session" to begin capturing AR pose data
 5. An "Exit" button will appear in the AR view to end the session
+
+## GUI Visualization
+
+The server includes a 3D visualization interface accessible at `https://<your-ip>:8443/static/gui.html`. This interface:
+
+- Displays the WebXR pose data as a 3D cube with coordinate axes
+- Updates in real-time via WebSocket connection
+- Includes interactive camera controls (pan, zoom, rotate)
+- Features an overlay panel showing precise position and orientation values
+- Allows minimizing the UI panel to focus on the visualization
 
 ## Data Format
 
@@ -112,13 +124,15 @@ For detailed architecture, sequence, data flow, and error handling diagrams, see
 ├── README.md               # This documentation file
 ├── diagrams.md             # Architecture and flow diagrams
 ├── requirements.txt        # Python dependencies
-├── run_server.py     # Script to start HTTPS server
+├── run_server.py           # Script to start HTTPS server
 ├── server.py               # Main FastAPI server implementation
 ├── setup_https.sh          # Script to generate self-signed certificates
 ├── certs/                  # Directory for SSL certificates
 │   ├── cert.pem            # Self-signed certificate
 │   └── key.pem             # Private key for the certificate
 └── static/                 # Static web files
+    ├── favicon.ico         # Favicon for the web app
+    ├── gui.html            # 3D visualization interface
     ├── index.html          # Main web interface
     ├── teleop_client.js    # WebXR client JavaScript code
     └── webxr_test.html     # WebXR compatibility test page

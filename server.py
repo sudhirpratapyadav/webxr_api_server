@@ -94,6 +94,11 @@ async def get(request: Request):
     # Redirect to the static HTML page
     return RedirectResponse(url="/static/index.html")
 
+@app.get("/favicon.ico")
+async def favicon():
+    # Redirect to the static favicon
+    return RedirectResponse(url="/static/favicon.ico")
+
 
 @app.get("/server-info")
 async def server_info():
@@ -131,7 +136,8 @@ async def websocket_endpoint(websocket: WebSocket):
                 pos = pose_data["position"]
                 logger.info(f"Received AR pose: x={pos['x']}, y={pos['y']}, z={pos['z']}")
             
-            # Broadcast removed - only store the latest pose for REST API access
+            # Broadcast the pose data to all connected clients
+            await manager.broadcast(pose_data)
             
     except WebSocketDisconnect:
         manager.disconnect(websocket)
