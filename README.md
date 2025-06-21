@@ -78,11 +78,9 @@ Access URLs:
 
 The server includes a 3D visualization interface accessible at `https://<your-ip>:8443/static/gui.html`. This interface:
 
-- Displays the WebXR pose data as a 3D cube with coordinate axes
-- Updates in real-time via WebSocket connection
+- Displays the a smartphone whose pose is updated in real-time via WebSocket connection
+- UI panel for displaying pose values and some other controls
 - Includes interactive camera controls (pan, zoom, rotate)
-- Features an overlay panel showing precise position and orientation values
-- Allows minimizing the UI panel to focus on the visualization
 
 ## Data Format
 

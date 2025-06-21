@@ -216,7 +216,7 @@
         let latestPose = null;
         
         // Three.js visualization variables
-        let scene, camera, renderer, controls, cube, originAxes, cubeAxes;
+        let scene, camera, renderer, controls, smartphone, originAxes, smartphoneAxes;
         let gui, poseFolder, positionFolder, orientationFolder, datGuiParams;
         let limitsCube;
         
@@ -306,8 +306,8 @@
             // Create camera
             const container = document.getElementById('visualization-container');
             const aspect = container.clientWidth / container.clientHeight;
-            camera = new THREE.PerspectiveCamera(75, aspect, 0.1, 1000);
-            camera.position.set(3, 3, 3);
+            camera = new THREE.PerspectiveCamera(75, aspect, 0.001, 10);
+            camera.position.set(0.5, 0.5, 0.5);
             camera.lookAt(0, 0, 0);
             console.log("Camera created at position:", camera.position);
             
@@ -317,8 +317,8 @@
             controls.dampingFactor = 0.25;
             controls.screenSpacePanning = false;
             controls.maxPolarAngle = Math.PI / 1.5; // limit vertical rotation
-            controls.minDistance = 1;
-            controls.maxDistance = 10;
+            controls.minDistance = 0.1;
+            controls.maxDistance = 2;
             console.log("OrbitControls added");
             
             // Add ambient light
@@ -332,23 +332,21 @@
             console.log("Lights added");
             
             // Create origin coordinate axes
-            originAxes = createCoordinateAxes(1);
+            originAxes = createCoordinateAxes(1.0, 0.005);
             scene.add(originAxes);
             console.log("Origin axes added");
             
-            // Create cube
-            const geometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
-            const material = new THREE.MeshPhongMaterial({ color: 0x4285f4, transparent: true, opacity: 0.8 });
-            cube = new THREE.Mesh(geometry, material);
-            scene.add(cube);
-            console.log("Main cube added");
+            // Create smartphone
+            smartphone = createSmartphone();
+            scene.add(smartphone);
+            console.log("Smartphone added");
             
-            // Create coordinate axes for the cube
-            cubeAxes = createCoordinateAxes(0.75);
-            cube.add(cubeAxes);
+            // Create coordinate axes for the smartphone
+            smartphoneAxes = createCoordinateAxes(0.1, 0.001);
+            smartphone.add(smartphoneAxes);
             
             // Create grid
-            const gridHelper = new THREE.GridHelper(10, 10);
+            const gridHelper = new THREE.GridHelper(2, 20);
             scene.add(gridHelper);
             console.log("Grid helper added");
             
@@ -376,8 +374,8 @@
                 resetView: function() {
                     resetCameraView();
                 },
-                positionLimitsEnabled: true, // Position limits toggle (default: true)
-                positionLimitValue: 0.1     // Value of the position limit in all directions
+                positionLimitsEnabled: false, // Position limits toggle (default: true)
+                positionLimitValue: 1.0     // Value of the position limit in all directions (2 meters total)
             };
             
             // Create GUI
@@ -397,9 +395,9 @@
             
             // Add position folder inside Pose Data
             positionFolder = poseFolder.addFolder('Position');
-            positionFolder.add(datGuiParams.position, 'x', -5, 5).step(0.001).name('X').listen();
-            positionFolder.add(datGuiParams.position, 'y', -5, 5).step(0.001).name('Y').listen();
-            positionFolder.add(datGuiParams.position, 'z', -5, 5).step(0.001).name('Z').listen();
+            positionFolder.add(datGuiParams.position, 'x', -2, 2).step(0.001).name('X').listen();
+            positionFolder.add(datGuiParams.position, 'y', -2, 2).step(0.001).name('Y').listen();
+            positionFolder.add(datGuiParams.position, 'z', -2, 2).step(0.001).name('Z').listen();
             positionFolder.open();
             
             // Add orientation folder inside Pose Data
@@ -421,7 +419,7 @@
                 updateLimitsCube();
             });
             
-            positionLimitsFolder.add(datGuiParams, 'positionLimitValue', 0.5, 5.0).step(0.05).name('Limit Value').onChange(function() {
+            positionLimitsFolder.add(datGuiParams, 'positionLimitValue', 0.1, 2.0).step(0.05).name('Limit Value').onChange(function() {
                 updateLimitsCube();
             });
             
@@ -484,12 +482,82 @@
             }
         }
         
+        // Create smartphone model
+        function createSmartphone() {
+            const phoneGroup = new THREE.Group();
+            
+            // Phone body (main rectangle) - typical smartphone dimensions
+            const bodyGeometry = new THREE.BoxGeometry(0.075, 0.155, 0.008);
+            const bodyMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0x1a1a1a,
+                shininess: 100
+            });
+            const phoneBody = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            phoneBody.castShadow = true;
+            phoneBody.receiveShadow = true;
+            phoneGroup.add(phoneBody);
+            
+            // Screen
+            const screenGeometry = new THREE.BoxGeometry(0.065, 0.135, 0.001);
+            const screenMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0x0a0a0a,
+                shininess: 200,
+                transparent: true,
+                opacity: 0.9
+            });
+            const screen = new THREE.Mesh(screenGeometry, screenMaterial);
+            screen.position.z = 0.0045;
+            phoneGroup.add(screen);
+            
+            // Screen glow effect
+            const glowGeometry = new THREE.BoxGeometry(0.066, 0.136, 0.0005);
+            const glowMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0x4a90e2,
+                transparent: true,
+                opacity: 0.3
+            });
+            const screenGlow = new THREE.Mesh(glowGeometry, glowMaterial);
+            screenGlow.position.z = 0.005;
+            phoneGroup.add(screenGlow);
+            
+            // Speaker
+            const speakerGeometry = new THREE.BoxGeometry(0.02, 0.002, 0.0005);
+            const speakerMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0x444444
+            });
+            const speaker = new THREE.Mesh(speakerGeometry, speakerMaterial);
+            speaker.position.set(0, 0.065, 0.0045);
+            phoneGroup.add(speaker);
+            
+            // Side buttons
+            const sideButtonGeometry = new THREE.BoxGeometry(0.001, 0.012, 0.002);
+            const sideButtonMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0x2a2a2a
+            });
+            
+            // Volume buttons
+            const volumeUp = new THREE.Mesh(sideButtonGeometry, sideButtonMaterial);
+            volumeUp.position.set(-0.038, 0.018, 0);
+            phoneGroup.add(volumeUp);
+            
+            const volumeDown = new THREE.Mesh(sideButtonGeometry, sideButtonMaterial);
+            volumeDown.position.set(-0.038, 0.003, 0);
+            phoneGroup.add(volumeDown);
+            
+            // Power button
+            const powerButton = new THREE.Mesh(sideButtonGeometry, sideButtonMaterial);
+            powerButton.position.set(0.038, 0.012, 0);
+            phoneGroup.add(powerButton);
+            
+            return phoneGroup;
+        }
+        
         // Create coordinate axes (RGB for XYZ)
-        function createCoordinateAxes(size) {
+        function createCoordinateAxes(size, thickness = 0.02) {
             const axesGroup = new THREE.Group();
             
             // X-axis (red)
-            const xGeometry = new THREE.CylinderGeometry(0.02, 0.02, size, 8);
+            const xGeometry = new THREE.CylinderGeometry(thickness, thickness, size, 8);
             xGeometry.rotateZ(-Math.PI / 2);
             const xMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
             const xAxis = new THREE.Mesh(xGeometry, xMaterial);
@@ -497,14 +565,14 @@
             axesGroup.add(xAxis);
             
             // Y-axis (green)
-            const yGeometry = new THREE.CylinderGeometry(0.02, 0.02, size, 8);
+            const yGeometry = new THREE.CylinderGeometry(thickness, thickness, size, 8);
             const yMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
             const yAxis = new THREE.Mesh(yGeometry, yMaterial);
             yAxis.position.y = size / 2;
             axesGroup.add(yAxis);
             
             // Z-axis (blue)
-            const zGeometry = new THREE.CylinderGeometry(0.02, 0.02, size, 8);
+            const zGeometry = new THREE.CylinderGeometry(thickness, thickness, size, 8);
             zGeometry.rotateX(Math.PI / 2);
             const zMaterial = new THREE.MeshBasicMaterial({ color: 0x0000ff });
             const zAxis = new THREE.Mesh(zGeometry, zMaterial);
@@ -573,9 +641,9 @@
 
         // Update visualization based on pose data
         function updateVisualization() {
-            if (!cube || !latestPose) return;
+            if (!smartphone || !latestPose) return;
             
-            // Update cube position if position data is available
+            // Update smartphone position if position data is available
             if (latestPose.position) {
                 // Get the position values
                 let posX = parseFloat(latestPose.position.x);
@@ -593,14 +661,14 @@
                     console.log(`Position limited to ±${posLimit}`);
                 }
                 
-                // Update cube position
-                cube.position.set(posX, posY, posZ);
+                // Update smartphone position
+                smartphone.position.set(posX, posY, posZ);
                 
                 // Log position for debugging
-                console.log(`Cube position: (${posX.toFixed(2)}, ${posY.toFixed(2)}, ${posZ.toFixed(2)})`);
+                console.log(`Smartphone position: (${posX.toFixed(2)}, ${posY.toFixed(2)}, ${posZ.toFixed(2)})`);
             }
             
-            // Update cube orientation if orientation data is available
+            // Update smartphone orientation if orientation data is available
             if (latestPose.orientation) {
                 const quaternion = new THREE.Quaternion(
                     parseFloat(latestPose.orientation.x),
@@ -608,7 +676,7 @@
                     parseFloat(latestPose.orientation.z),
                     parseFloat(latestPose.orientation.w)
                 );
-                cube.quaternion.copy(quaternion);
+                smartphone.quaternion.copy(quaternion);
             }
         }
         
@@ -638,14 +706,14 @@
         function resetCameraView() {
             if (controls) {
                 // Reset camera position
-                camera.position.set(3, 3, 3);
+                camera.position.set(0.5, 0.5, 0.5);
                 camera.lookAt(0, 0, 0);
                 
                 // Reset controls
                 controls.reset();
                 
-                // If cube exists, focus on it
-                if (cube && latestPose && latestPose.position) {
+                // If smartphone exists, focus on it
+                if (smartphone && latestPose && latestPose.position) {
                     controls.target.set(
                         parseFloat(latestPose.position.x) || 0,
                         parseFloat(latestPose.position.y) || 0,
