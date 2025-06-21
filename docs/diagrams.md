@@ -17,15 +17,12 @@ graph TD
         F[WebSocket API]
         G[Static File Server]
         V[3D Visualization GUI]
+        J[Latest Pose Memory]
     end
     
     subgraph HTTPS Layer
         H[Uvicorn HTTPS]
         I[Self-signed Certs]
-    end
-    
-    subgraph Storage
-        J[Latest Pose Memory]
     end
 
     A -- WebXR API --> B
@@ -40,7 +37,6 @@ graph TD
     D -- stores --> J
     D -- broadcasts to --> V
     I -- enables --> H
-    J -- updates --> V
 ```
 
 ## Sequence Diagram

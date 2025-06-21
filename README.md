@@ -2,6 +2,15 @@
 
 A streamlined server that captures pose data (position and orientation) from mobile AR sessions (using WebXR api) and makes it available to server (PC) through WebSocket.
 
+<table>
+<tr>
+<td><img src="docs/pose_sensor.jpg" alt="Mobile AR Pose Sensor" width="200"></td>
+<td><img src="docs/pose_viewer.gif" alt="GUI Visualization Demo" width="500"></td>
+</tr>
+</table>
+
+*Mobile AR interface (left) and real-time 3D visualization (right)*
+
 ## Requirements
 
 - Python 3.7+
@@ -32,14 +41,9 @@ To check if your device supports WebXR:
    ./setup_https.sh
    ```
 
-4. Run the server:
+4. Run the server (start server using uvicorn):
    ```bash
    python run_server.py
-   ```
-
-5. To stop the server gracefully:
-   ```bash
-   # Press Ctrl+C once and wait for "All clients disconnected" message
    ```
 
 ### Accessing the web app
@@ -113,14 +117,13 @@ The server provides two APIs
 
 ## Architecture and Flow Diagrams
 
-For detailed architecture, sequence, data flow, and error handling diagrams, see [diagrams.md](diagrams.md).
+For detailed architecture, sequence, data flow, and error handling diagrams, see [diagrams.md](docs/diagrams.md).
 
 ## Repository Structure
 
 ```
 .
 ├── README.md               # This documentation file
-├── diagrams.md             # Architecture and flow diagrams
 ├── requirements.txt        # Python dependencies
 ├── run_server.py           # Script to start HTTPS server
 ├── server.py               # Main FastAPI server implementation
@@ -128,6 +131,10 @@ For detailed architecture, sequence, data flow, and error handling diagrams, see
 ├── certs/                  # Directory for SSL certificates
 │   ├── cert.pem            # Self-signed certificate
 │   └── key.pem             # Private key for the certificate
+├── docs/                   # Documentation and media files
+│   ├── diagrams.md         # Architecture and flow diagrams
+│   ├── pose_sensor.jpg     # Mobile AR client demo screenshot
+│   └── pose_viewer.gif     # GUI visualization demo
 └── static/                 # Static web files
     ├── favicon.ico         # Favicon for the web app
     ├── gui.html            # 3D visualization interface
