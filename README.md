@@ -1,6 +1,6 @@
-# WebXR API Server
+# WebXR API Server with ROS2 Integration
 
-A streamlined server that captures pose data (position and orientation) from mobile AR sessions (using WebXR api) and makes it available to server (PC) through WebSocket.
+A streamlined server that captures pose data (position and orientation) from mobile AR sessions (using WebXR API) and makes it available through WebSocket and ROS2 topics. The server publishes pose data to ROS2 topics for seamless integration with robotics applications.
 
 <table>
 <tr>
@@ -14,6 +14,7 @@ A streamlined server that captures pose data (position and orientation) from mob
 ## Requirements
 
 - Python 3.7+
+- ROS2
 - Mobile device with WebXR API support (most modern Android/iOS devices)
 - Both server and client on the same network
 
@@ -41,10 +42,12 @@ To check if your device supports WebXR:
    ./setup_https.sh
    ```
 
-4. Run the server (start server using uvicorn):
+5. Run the server:
    ```bash
    python run_server.py
    ```
+
+   The server will automatically detect if ROS2 is available and enable integration.
 
 ### Accessing the web app
 
@@ -56,11 +59,18 @@ Once the server is running, you can access:
 
 The server will display your IP address when it starts. For example:
 ```
-Starting HTTPS server on 192.168.31.22:8443
-Access URLs:
-- Main App: https://192.168.31.22:8443/static/index.html
-- Visualization: https://192.168.31.22:8443/static/gui.html
-- WebXR Test: https://192.168.31.22:8443/static/webxr_test.html
+🚀 Starting HTTPS server with ROS2 integration
+   Address: 192.168.31.22:8443
+📱 Access URLs:
+   - Main App: https://192.168.31.22:8443/static/index.html
+   - WebXR Test: https://192.168.31.22:8443/static/webxr_test.html
+   - Pose Monitor: https://192.168.31.22:8443/static/gui.html
+   - Server Info: https://192.168.31.22:8443/server-info
+   - ROS Info: https://192.168.31.22:8443/ros-info
+🤖 ROS2 Integration:
+   - Topic: /webxr/pose (geometry_msgs/PoseStamped)
+   - Node: webxr_pose_publisher
+   - Test with: ros2 topic echo /webxr/pose
 ```
 
 ## Important Notes
@@ -70,13 +80,36 @@ Access URLs:
 - For mobile devices, you need to first open the URL in your browser and accept the security warning
 - Both your computer and mobile device must be on the same network
 
-## Usage
+## ROS2 Integration
 
-1. Open the web app on your mobile device
-2. Click "Connect to Server" to establish a WebSocket connection
-3. Once connected, the "Start AR Session" button will become active
-4. Click "Start AR Session" to begin capturing AR pose data
-5. An "Exit" button will appear in the AR view to end the session
+When ROS2 is available, the server automatically publishes pose data to ROS2 topics:
+
+### ROS2 Topic Information
+- **Topic**: `/webxr/pose`
+- **Message Type**: `geometry_msgs/PoseStamped`
+- **Node Name**: `webxr_pose_publisher`
+- **Frame ID**: `webxr_frame`
+
+### ROS2 Message Format
+
+The pose data is published as `geometry_msgs/PoseStamped`:
+```
+header:
+  stamp:
+    sec: 1718889296
+    nanosec: 789000000
+  frame_id: webxr_frame
+pose:
+  position:
+    x: 0.0000
+    y: 1.6000
+    z: 0.0000
+  orientation:
+    x: 0.0000
+    y: 0.0000
+    z: 0.0000
+    w: 1.0000
+```
 
 ## GUI Visualization
 
@@ -86,34 +119,19 @@ The server includes a 3D visualization interface accessible at `https://<your-ip
 - UI panel for displaying pose values and some other controls
 - Includes interactive camera controls (pan, zoom, rotate)
 
-## Data Format
 
-The pose data is transmitted as JSON with the following structure, containing position and orientation (quaternion):
+## API Endpoints
 
-```json
-{
-  "timestamp": "2025-06-20T12:34:56.789Z",
-  "position": {
-    "x": "0.0000",
-    "y": "1.6000",
-    "z": "0.0000"
-  },
-  "orientation": {
-    "x": "0.0000",
-    "y": "0.0000",
-    "z": "0.0000",
-    "w": "1.0000"
-  }
-}
-```
+The server provides multiple APIs for accessing pose data and system information:
 
-## API endpoints
+1. **WebSocket API**: Real-time pose streaming at `wss://<your-ip>:8443/ws`
 
-The server provides two APIs
+2. **REST API**: Get the latest pose data with `https://<your-ip>:8443/latest_pose`
 
-1. **REST API**: Get the latest pose data by sending a GET request to `https://<your-ip>:8443/latest_pose`
+3. **Server Info**: Check server status with `https://<your-ip>:8443/server-info`
 
-2. **Server Info**: Check server status with `https://<your-ip>:8443/server-info`
+4. **ROS Info**: Check ROS2 integration status with `https://<your-ip>:8443/ros-info`
+
 
 ## Architecture and Flow Diagrams
 
