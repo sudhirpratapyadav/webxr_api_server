@@ -137,7 +137,16 @@ async function startXRSession() {
             overlayExitBtn.style.fontSize = '18px';
             overlayExitBtn.style.fontWeight = 'bold';
             overlayExitBtn.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.3)';
+            overlayExitBtn.style.width = 'auto'; // Only as wide as the content
+            overlayExitBtn.style.minWidth = 'unset'; // Override any min-width
+            overlayExitBtn.style.maxWidth = 'unset'; // Override any max-width
+            overlayExitBtn.style.alignItems = 'center'; // Center text vertically
+            overlayExitBtn.style.justifyContent = 'center'; // Center text horizontally
             overlayExitBtn.style.pointerEvents = 'auto'; // Make sure the button can be clicked
+            
+            // Override inherited styles from the page
+            overlayExitBtn.style.flex = 'none';
+            overlayExitBtn.id = 'xr-exit-btn'; // Give it a unique ID
             
             // Add click event before appending to DOM
             overlayExitBtn.addEventListener('click', () => {

@@ -361,7 +361,9 @@
                 timestamp: "N/A",
                 resetView: function() {
                     resetCameraView();
-                }
+                },
+                positionLimitsEnabled: true, // Position limits toggle (default: true)
+                positionLimitValue: 0.1     // Value of the position limit in all directions
             };
             
             // Create GUI
@@ -399,6 +401,9 @@
             
             // Add reset view button to the top folder
             topFolder.add(datGuiParams, 'resetView').name('Reset View');
+            
+            // Add position limits toggle and value to the top folder
+            topFolder.add(datGuiParams, 'positionLimitsEnabled').name('Position Limits');
             
             // Open the top folder by default
             topFolder.open();
@@ -494,11 +499,16 @@
                 let posY = parseFloat(latestPose.position.y);
                 let posZ = parseFloat(latestPose.position.z);
                 
-                // Apply position limits to keep object visible
-                const posLimit = 5;
-                posX = Math.max(-posLimit, Math.min(posLimit, posX));
-                posY = Math.max(-posLimit, Math.min(posLimit, posY));
-                posZ = Math.max(-posLimit, Math.min(posLimit, posZ));
+                // Apply position limits to keep object visible if enabled
+                if (datGuiParams.positionLimitsEnabled) {
+                    const posLimit = datGuiParams.positionLimitValue;
+                    posX = Math.max(-posLimit, Math.min(posLimit, posX));
+                    posY = Math.max(-posLimit, Math.min(posLimit, posY));
+                    posZ = Math.max(-posLimit, Math.min(posLimit, posZ));
+                    
+                    // Log when limits are applied
+                    console.log(`Position limited to ±${posLimit}`);
+                }
                 
                 // Update cube position
                 cube.position.set(posX, posY, posZ);
