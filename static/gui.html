@@ -28,46 +28,87 @@
             text-align: center;
             margin-bottom: 20px;
         }
-        .status-panel {
+        .connection-card {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            border-left: 5px solid #e74c3c; /* Red border for disconnected */
+        }
+        .connection-card.connected {
+            border-left: 5px solid #2ecc71; /* Green border for connected */
+        }
+        .status-container {
             display: flex;
             align-items: center;
-            margin-bottom: 20px;
-            padding: 10px;
-            background-color: #f0f0f0;
-            border-radius: 5px;
+            margin-bottom: 15px;
         }
         .status-indicator {
             width: 15px;
             height: 15px;
             border-radius: 50%;
-            background-color: red;
+            background-color: #e74c3c;
             margin-right: 10px;
+            transition: background-color 0.3s ease;
+        }
+        /* Pulse animation for connected state */
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(46, 204, 113, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0); }
+        }
+        .status-indicator.pulse {
+            animation: pulse 2s infinite;
         }
         .status-indicator.connected {
-            background-color: #4CAF50;
+            background-color: #2ecc71;
         }
         #connection-status {
-            font-weight: bold;
+            font-weight: 500;
+            color: #333;
         }
         .controls {
             margin-bottom: 20px;
         }
         button {
-            padding: 10px 20px;
-            background-color: #4285f4;
+            padding: 12px 20px;
             color: white;
             border: none;
-            border-radius: 5px;
+            border-radius: 8px;
             cursor: pointer;
             font-size: 16px;
-            transition: background-color 0.3s;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            gap: 8px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
         }
-        button:hover {
+        /* Connect button (disconnected state) */
+        #connect-btn {
+            background-color: #4285f4;
+        }
+        #connect-btn:hover {
             background-color: #3367d6;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        /* Disconnect button (connected state) */
+        #connect-btn.connected {
+            background-color: #e74c3c;
+        }
+        #connect-btn.connected:hover {
+            background-color: #c0392b;
         }
         button:disabled {
-            background-color: #ccc;
+            background-color: #bdc3c7;
             cursor: not-allowed;
+            box-shadow: none;
         }
         .pose-data {
             background-color: #f9f9f9;
@@ -146,13 +187,14 @@
     <div class="container">
         <h1>WebXR Pose Monitor</h1>
         
-        <div class="status-panel">
-            <div id="connection-indicator" class="status-indicator"></div>
-            <span id="connection-status">Disconnected</span>
-        </div>
-        
-        <div class="controls">
-            <button id="connect-btn">Connect to Server</button>
+        <div class="connection-card" id="connection-card">
+            <div class="status-container">
+                <div id="connection-indicator" class="status-indicator"></div>
+                <span id="connection-status">Disconnected</span>
+            </div>
+            <button id="connect-btn">
+                <span class="btn-text">Connect to Server</span>
+            </button>
         </div>
         
         <div class="pose-data">
@@ -190,13 +232,19 @@
             socket.onopen = () => {
                 connectionStatus.textContent = 'Connected';
                 connectionIndicator.classList.add('connected');
+                connectionIndicator.classList.add('pulse');
+                document.getElementById('connection-card').classList.add('connected');
                 connectBtn.textContent = 'Disconnect';
+                connectBtn.classList.add('connected');
             };
             
             socket.onclose = () => {
                 connectionStatus.textContent = 'Disconnected';
                 connectionIndicator.classList.remove('connected');
+                connectionIndicator.classList.remove('pulse');
+                document.getElementById('connection-card').classList.remove('connected');
                 connectBtn.textContent = 'Connect to Server';
+                connectBtn.classList.remove('connected');
             };
             
             socket.onerror = (error) => {

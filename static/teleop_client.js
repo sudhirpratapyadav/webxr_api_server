@@ -59,7 +59,10 @@ function connectToServer() {
     socket.onopen = () => {
         connectionStatus.textContent = 'WebSocket: Connected';
         connectionIndicator.classList.add('connected');
+        connectionIndicator.classList.add('pulse');
+        document.getElementById('connection-card').classList.add('connected');
         connectBtn.textContent = 'Disconnect';
+        connectBtn.classList.add('connected');
         // Check WebXR support and enable the button if supported
         checkXRSupport();
     };
@@ -67,7 +70,10 @@ function connectToServer() {
     socket.onclose = () => {
         connectionStatus.textContent = 'WebSocket: Disconnected';
         connectionIndicator.classList.remove('connected');
+        connectionIndicator.classList.remove('pulse');
+        document.getElementById('connection-card').classList.remove('connected');
         connectBtn.textContent = 'Connect to Server';
+        connectBtn.classList.remove('connected');
         startXRBtn.disabled = true;
         
         // If XR session is active, stop it
