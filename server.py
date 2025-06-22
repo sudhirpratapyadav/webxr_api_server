@@ -12,8 +12,9 @@ from contextlib import asynccontextmanager
 import rclpy
 from rclpy.node import Node
 from rclpy.executors import SingleThreadedExecutor
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import Pose
 from std_msgs.msg import Header
+from kinova_teleop.msg import WebXRControl  # Import our custom message
 import threading
 
 # Set up logging
@@ -24,10 +25,10 @@ class PosePublisherNode(Node):
     def __init__(self):
         super().__init__('webxr_pose_publisher')
         
-        # Create publisher for pose data
-        self.pose_publisher = self.create_publisher(
-            PoseStamped, 
-            '/webxr/pose', 
+        # Create publisher for WebXR control data with all needed information
+        self.control_publisher = self.create_publisher(
+            WebXRControl,
+            '/webxr/control',
             10
         )
         
@@ -37,45 +38,58 @@ class PosePublisherNode(Node):
         self.get_logger().info('WebXR Pose Publisher Node initialized')
         
     def publish_pose(self, pose_data: Dict):
-        """Publish pose data to ROS topic"""
+        """Publish pose data with control states to ROS topic"""
         try:
-            msg = PoseStamped()
+            self.get_logger().info(f"Attempting to publish pose data: {json.dumps(pose_data)[:100]}...")
+            
+            # Create WebXRControl message with all data
+            control_msg = WebXRControl()
             
             # Set header
-            msg.header = Header()
-            msg.header.stamp = self.get_clock().now().to_msg()
-            msg.header.frame_id = "webxr_frame"
+            control_msg.header = Header()
+            control_msg.header.stamp = self.get_clock().now().to_msg()
+            control_msg.header.frame_id = "webxr_frame"
             
             # Set position
             if "position" in pose_data:
                 pos = pose_data["position"]
-                msg.pose.position.x = float(pos.get('x', 0.0))
-                msg.pose.position.y = float(pos.get('y', 0.0))
-                msg.pose.position.z = float(pos.get('z', 0.0))
+                control_msg.pose.position.x = float(pos.get('x', 0.0))
+                control_msg.pose.position.y = float(pos.get('y', 0.0))
+                control_msg.pose.position.z = float(pos.get('z', 0.0))
             
             # Set orientation (quaternion)
             if "orientation" in pose_data:
                 ori = pose_data["orientation"]
-                msg.pose.orientation.x = float(ori.get('x', 0.0))
-                msg.pose.orientation.y = float(ori.get('y', 0.0))
-                msg.pose.orientation.z = float(ori.get('z', 0.0))
-                msg.pose.orientation.w = float(ori.get('w', 1.0))
+                control_msg.pose.orientation.x = float(ori.get('x', 0.0))
+                control_msg.pose.orientation.y = float(ori.get('y', 0.0))
+                control_msg.pose.orientation.z = float(ori.get('z', 0.0))
+                control_msg.pose.orientation.w = float(ori.get('w', 1.0))
             else:
                 # Default orientation (no rotation)
-                msg.pose.orientation.w = 1.0
+                control_msg.pose.orientation.w = 1.0
             
-            # Publish the message
-            self.pose_publisher.publish(msg)
+            # Set control states
+            if "control" in pose_data:
+                control = pose_data["control"]
+                control_msg.gripper_open = bool(control.get('gripperOpen', False))
+                control_msg.move_enabled = bool(control.get('moveEnabled', False))
+            else:
+                control_msg.gripper_open = False
+                control_msg.move_enabled = False
             
-            self.get_logger().debug(
-                f'Published pose: pos({msg.pose.position.x:.3f}, '
-                f'{msg.pose.position.y:.3f}, {msg.pose.position.z:.3f}) '
-                f'ori({msg.pose.orientation.x:.3f}, {msg.pose.orientation.y:.3f}, '
-                f'{msg.pose.orientation.z:.3f}, {msg.pose.orientation.w:.3f})'
+            # Publish the WebXRControl message
+            self.control_publisher.publish(control_msg)
+            
+            self.get_logger().info(
+                f'Published to ROS topic: pos({control_msg.pose.position.x:.3f}, '
+                f'{control_msg.pose.position.y:.3f}, {control_msg.pose.position.z:.3f}) '
+                f'ori({control_msg.pose.orientation.x:.3f}, {control_msg.pose.orientation.y:.3f}, '
+                f'{control_msg.pose.orientation.z:.3f}, {control_msg.pose.orientation.w:.3f}) '
+                f'control(gripper_open={control_msg.gripper_open}, move_enabled={control_msg.move_enabled})'
             )
             
         except Exception as e:
-            self.get_logger().error(f'Error publishing pose: {str(e)}')
+            self.get_logger().error(f'Error publishing pose with control: {str(e)}')
     
     def timer_callback(self):
         """Optional periodic callback for housekeeping"""
@@ -275,6 +289,8 @@ async def websocket_endpoint(websocket: WebSocket):
         while True:
             # Receive pose data from client
             data = await websocket.receive_text()
+            logger.info(f"Raw data received: {data[:100]}...") # Log the first 100 chars of raw data
+            
             pose_data = json.loads(data)
             
             # Update the latest pose
@@ -287,9 +303,11 @@ async def websocket_endpoint(websocket: WebSocket):
             if "position" in pose_data and "orientation" in pose_data:
                 pos = pose_data["position"]
                 ori = pose_data["orientation"]
+                ctrl = pose_data.get("control", {})
                 logger.info(f"Received and published AR pose:")
                 logger.info(f"  Position: x={pos['x']}, y={pos['y']}, z={pos['z']}")
                 logger.info(f"  Quaternion: x={ori['x']}, y={ori['y']}, z={ori['z']}, w={ori['w']}")
+                logger.info(f"  Control: gripperOpen={ctrl.get('gripperOpen', False)}, moveEnabled={ctrl.get('moveEnabled', False)}")
             elif "position" in pose_data:
                 pos = pose_data["position"]
                 logger.info(f"Received and published AR pose: x={pos['x']}, y={pos['y']}, z={pos['z']}")
@@ -315,7 +333,7 @@ async def ros_info():
     if ros_manager.node:
         return {
             "node_name": ros_manager.node.get_name(),
-            "topics": ["/webxr/pose"],
+            "topics": ["/webxr/control"],
             "status": "active"
         }
     else:

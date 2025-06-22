@@ -9,6 +9,9 @@ let socket = null;
 let xrSession = null;
 let referenceSpace = null;
 let animationFrameId = null;
+// Control state variables for AR session
+let gripperOpen = false;
+let moveEnabled = false;
 
 // Check WebXR support
 function checkXRSupport() {
@@ -122,31 +125,39 @@ async function startXRSession() {
             overlayElement.style.pointerEvents = 'none'; // Allow clicks to pass through except for our button
             document.body.appendChild(overlayElement);
             
-            // Create an exit button in the overlay
-            const overlayExitBtn = document.createElement('button');
-            overlayExitBtn.innerText = 'Exit';
-            overlayExitBtn.style.position = 'absolute';
-            overlayExitBtn.style.bottom = '30px';
-            overlayExitBtn.style.left = '50%';
-            overlayExitBtn.style.transform = 'translateX(-50%)';
-            overlayExitBtn.style.padding = '16px 30px';
-            overlayExitBtn.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
-            overlayExitBtn.style.color = 'white';
-            overlayExitBtn.style.border = 'none';
-            overlayExitBtn.style.borderRadius = '30px';
-            overlayExitBtn.style.fontSize = '18px';
-            overlayExitBtn.style.fontWeight = 'bold';
-            overlayExitBtn.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.3)';
-            overlayExitBtn.style.width = 'auto'; // Only as wide as the content
-            overlayExitBtn.style.minWidth = 'unset'; // Override any min-width
-            overlayExitBtn.style.maxWidth = 'unset'; // Override any max-width
-            overlayExitBtn.style.alignItems = 'center'; // Center text vertically
-            overlayExitBtn.style.justifyContent = 'center'; // Center text horizontally
-            overlayExitBtn.style.pointerEvents = 'auto'; // Make sure the button can be clicked
+            // Reset control state variables
+            gripperOpen = false;
+            moveEnabled = false;
             
-            // Override inherited styles from the page
-            overlayExitBtn.style.flex = 'none';
-            overlayExitBtn.id = 'xr-exit-btn'; // Give it a unique ID
+            // Create button styling function
+            function createARButton(id, text, bottomPosition, leftPosition) {
+                const button = document.createElement('button');
+                button.innerText = text;
+                button.style.position = 'absolute';
+                button.style.bottom = bottomPosition;
+                button.style.left = leftPosition;
+                button.style.transform = 'translateX(-50%)';
+                button.style.padding = '16px 20px';
+                button.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+                button.style.color = 'white';
+                button.style.border = 'none';
+                button.style.borderRadius = '30px';
+                button.style.fontSize = '16px';
+                button.style.fontWeight = 'bold';
+                button.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.3)';
+                button.style.width = 'auto';
+                button.style.minWidth = 'unset';
+                button.style.maxWidth = 'unset';
+                button.style.alignItems = 'center';
+                button.style.justifyContent = 'center';
+                button.style.pointerEvents = 'auto';
+                button.style.flex = 'none';
+                button.id = id;
+                return button;
+            }
+            
+            // Create an exit button in the overlay
+            const overlayExitBtn = createARButton('xr-exit-btn', 'Exit', '30px', '50%');
             
             // Add click event before appending to DOM
             overlayExitBtn.addEventListener('click', () => {
@@ -156,7 +167,47 @@ async function startXRSession() {
                 }
             });
             
+            // Create gripper toggle button
+            const gripperBtn = createARButton('xr-gripper-btn', 'Open Gripper', '30px', '20%');
+            gripperBtn.addEventListener('click', () => {
+                gripperOpen = !gripperOpen;
+                gripperBtn.innerText = gripperOpen ? 'Close Gripper' : 'Open Gripper';
+                console.log(`Gripper state changed to: ${gripperOpen ? 'Open' : 'Closed'}`);
+            });
+            
+            // Create move momentary button (active only while pressed)
+            const moveBtn = createARButton('xr-move-btn', 'Hold to Move', '30px', '80%');
+            
+            // Add touch/mouse down event (activate when pressed)
+            moveBtn.addEventListener('mousedown', () => {
+                moveEnabled = true;
+                // Keep text consistent, only change color
+                moveBtn.style.backgroundColor = 'rgba(46, 204, 113, 0.8)'; // Green background when active
+                console.log('Move state changed to: Enabled');
+            });
+            moveBtn.addEventListener('touchstart', () => {
+                moveEnabled = true;
+                // Keep text consistent, only change color
+                moveBtn.style.backgroundColor = 'rgba(46, 204, 113, 0.8)'; // Green background when active
+                console.log('Move state changed to: Enabled');
+            });
+            
+            // Add touch/mouse up and leave events (deactivate when released)
+            const deactivateMove = () => {
+                moveEnabled = false;
+                moveBtn.style.backgroundColor = 'rgba(0, 0, 0, 0.7)'; // Reset to original color
+                console.log('Move state changed to: Disabled');
+            };
+            
+            moveBtn.addEventListener('mouseup', deactivateMove);
+            moveBtn.addEventListener('mouseleave', deactivateMove);
+            moveBtn.addEventListener('touchend', deactivateMove);
+            moveBtn.addEventListener('touchcancel', deactivateMove);
+            
+            // Add all buttons to overlay
             overlayElement.appendChild(overlayExitBtn);
+            overlayElement.appendChild(gripperBtn);
+            overlayElement.appendChild(moveBtn);
             
             // Set up AR session
             let sessionOptions = {
@@ -233,7 +284,7 @@ function onXRAnimationFrame(time, frame) {
         const position = pose.transform.position;
         const orientation = pose.transform.orientation;
         
-        // Create a pose data object
+        // Create a pose data object with control states
         const poseData = {
             timestamp: new Date().toISOString(),
             position: {
@@ -246,12 +297,20 @@ function onXRAnimationFrame(time, frame) {
                 y: orientation.y.toFixed(4),
                 z: orientation.z.toFixed(4),
                 w: orientation.w.toFixed(4)
+            },
+            control: {
+                gripperOpen: gripperOpen,
+                moveEnabled: moveEnabled
             }
         };
         
         // Send the pose data via WebSocket if connected
         if (socket && socket.readyState === WebSocket.OPEN) {
-            socket.send(JSON.stringify(poseData));
+            const jsonData = JSON.stringify(poseData);
+            console.log(`Sending data to server: ${jsonData.substring(0, 100)}...`);
+            socket.send(jsonData);
+        } else {
+            console.warn('WebSocket not connected, cannot send pose data');
         }
     } else {
         console.log('No pose available in this frame');
@@ -289,7 +348,29 @@ function stopXRSession() {
     }
 }
 
-// No need for a fallback close button - using DOM overlay exit button
+// Add server status check before connecting
+function checkServerStatus() {
+    // Get the current location to build the URL dynamically
+    const url = `${window.location.protocol}//${window.location.host}/server-info`;
+    
+    console.log(`Checking server status at: ${url}`);
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            console.log('Server status:', data);
+            if (data.server_status === 'running') {
+                console.log('Server is running, can connect to WebSocket');
+            } else {
+                console.warn('Server status check failed or server not running');
+            }
+        })
+        .catch(error => {
+            console.error('Error checking server status:', error);
+        });
+}
+
+// Call status check on page load
+document.addEventListener('DOMContentLoaded', checkServerStatus);
 
 // Event listeners
 connectBtn.addEventListener('click', toggleConnection);
